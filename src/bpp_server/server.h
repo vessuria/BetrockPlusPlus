@@ -138,7 +138,10 @@ public:
 		return players;
 	}
 
-	const AddonManager& GetAddonManager() noexcept {
+	AddonManager& GetAddonManager() noexcept {
+		return addonManager;
+	}
+	const AddonManager& GetAddonManager() const noexcept {
 		return addonManager;
 	}
 

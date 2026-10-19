@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2026, jwaxy <jwaxy.is-a.dev>
+ * Copyright (c) 2026, Anya Rihtarshich <vesui@proton.me>
  *
  * SPDX-License-Identifier: AGPL-3.0-only
  *
@@ -7,6 +8,7 @@
 #pragma once
 
 #include "addon.h"
+#include "addon_network.h"
 #include <memory>
 #include <vector>
 
@@ -22,6 +24,14 @@ public:
 	AddonManager& operator=(const AddonManager&) = delete;
 
 	void Load();
+
+	AddonNetwork& Network() noexcept {
+		return network;
+	}
+
+	const AddonNetwork& Network() const noexcept {
+		return network;
+	}
 
 	const std::vector<std::unique_ptr<Addon>>& GetAddons() const noexcept {
 		return addons;
@@ -41,4 +51,5 @@ private:
 	Server* server;
 	// Only if C++ std had handle maps..., maybe we should use a library for that?
 	std::vector<std::unique_ptr<Addon>> addons;
+	AddonNetwork network;
 };

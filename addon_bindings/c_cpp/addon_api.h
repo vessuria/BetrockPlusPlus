@@ -14,6 +14,7 @@
 #define ADDON_API_H
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
 #define ADDON_API_VERSION 1
@@ -45,6 +46,35 @@ typedef struct {
 	int8_t id;
 	uint8_t meta;
 } bp_block;
+
+// max 1mib
+#define BP_MAX_PACKET_PAYLOAD ((1u << 20) - 1u)
+
+typedef enum {
+	BP_PACKET_INCOMPLETE,
+	BP_PACKET_READY,
+	BP_PACKET_INVALID
+} bp_packet_decode_result;
+
+typedef bp_packet_decode_result (*bp_packet_decode_fn)(const bp_api* api, const uint8_t* data,
+                                                     size_t available, size_t* payloadSize, void* userData);
+
+typedef struct {
+	bp_player* player;
+	uint8_t id;
+	const uint8_t* data;
+	size_t size;
+} bp_packet_event;
+
+typedef void (*bp_packet_receive_fn)(const bp_api* api, const bp_packet_event* event, void* userData);
+
+// networking functions & callbacks are tick-thread only.
+typedef struct {
+	bool (*registerPacket)(const bp_api* api, uint8_t id, bp_packet_decode_fn decode,
+	                       bp_packet_receive_fn receive, void* userData);
+	bool (*unregisterPacket)(const bp_api* api, uint8_t id);
+	bool (*sendPacket)(bp_player* player, uint8_t id, const uint8_t* data, size_t size);
+} bp_network_api;
 
 struct bp_api {
 	uint32_t version;
@@ -93,6 +123,8 @@ struct bp_api {
 	struct {
 		bool (*execute)(const bp_api* api, bp_player* sender, const char* command);
 	} commands;
+
+	bp_network_api network;
 };
 
 typedef struct {

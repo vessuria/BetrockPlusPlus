@@ -192,6 +192,7 @@ bp_api MakeAddonAPI() {
 		.entity = { .getPosition = EntityGetPosition, .setPosition = EntitySetPosition, .getWorld = EntityGetWorld },
 		.world = { .setBlock = SetBlock, .getBlock = GetBlock, .sendBlockUpdate = SendBlockUpdate },
 		.data = { .setPlayer = SetPlayerData, .getPlayer = GetPlayerData },
-		.commands = { .execute = ExecuteAddonCommand }
+		.commands = { .execute = ExecuteAddonCommand },
+		.network = MakeAddonNetworkAPI()
 	};
 }

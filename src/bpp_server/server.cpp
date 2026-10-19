@@ -1217,7 +1217,8 @@ void Server::ProcessIncoming(PlayerSession& _session) {
 
 	bool recvPacket = false;
 
-	while (_session.stream.HasData()) {
+	while (_session.connState == ConnectionState::Playing && _session.stream.IsConnected() &&
+	       _session.stream.HasData()) {
 		size_t packetMark = _session.stream.Mark();
 
 		PacketId packetId = _session.stream.Read<PacketId>();
@@ -1228,8 +1229,20 @@ void Server::ProcessIncoming(PlayerSession& _session) {
 			break;
 		}
 
-		if (!PacketDispatcher::Dispatch(packetId, _session, sessionWorld, *this))
-			return; // session is dead, or sent an unknown packet
+		// TODO: added as a best guess, not fully thought through
+		const auto custom = addonManager.Network().Dispatch(static_cast<uint8_t>(packetId), _session);
+		if (custom == AddonNetwork::Result::Incomplete) {
+			_session.stream.Rollback(packetMark);
+			break;
+		}
+		if (custom == AddonNetwork::Result::Invalid) {
+			connStateManager.DisconnectPlayer(_session, "Invalid addon packet", *this);
+			return;
+		}
+		if ((custom == AddonNetwork::Result::Unhandled &&
+		     !PacketDispatcher::Dispatch(packetId, _session, sessionWorld, *this)) ||
+		    !_session.stream.IsConnected())
+			return;
 
 		if (_session.stream.CheckAndClearShortRead()) {
 			// The packet wasn't full.

@@ -291,6 +291,7 @@ set(SERVER_SOURCES
 
     src/bpp_server/addon/addon_manager.cpp
     src/bpp_server/addon/addon_impl.cpp
+    src/bpp_server/addon/addon_network.cpp
 
     ${COMMAND_SOURCES}
 )

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2026, Pixel Brush <pixelbrush.dev>
+ * Copyright (c) 2026, Anya Rihtarshich <vesui@proton.me>
  *
  * SPDX-License-Identifier: AGPL-3.0-only
  *
@@ -22,6 +23,8 @@
 #include <cstdint>
 #include <cstring>
 #include <packet_ids.h>
+#include <span>
+#include <stdexcept>
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -118,8 +121,38 @@ public:
 	// Copies up to _len bytes out of the internal read buffer.
 	size_t ReadBytes(uint8_t* _buf, size_t _len);
 
+	std::span<const uint8_t> GetReadableBytes() const {
+		return std::span<const uint8_t>(readBuffer).subspan(readPos);
+	}
+
+	void SkipBytes(size_t _len) {
+		if (_len > readBuffer.size() - readPos) {
+			shortRead = true;
+			return;
+		}
+		readPos += _len;
+	}
+
 	// Append bytes to the per-session write buffer (no syscall).
 	void WriteBytes(const uint8_t* _buf, size_t _len);
+
+	// Reserve before appending anything
+	void WritePacket(uint8_t _id, const uint8_t* _data, size_t _len) {
+		if (!connected)
+			return;
+		if (_len >= writeBuffer.max_size() - writeBuffer.size())
+			throw std::length_error("Packet exceeds write buffer capacity");
+		const size_t required = writeBuffer.size() + 1 + _len;
+		if (required > writeBuffer.capacity()) {
+			const size_t grown = writeBuffer.capacity() <= writeBuffer.max_size() / 2
+			                        ? writeBuffer.capacity() * 2 : writeBuffer.max_size();
+			writeBuffer.reserve(required > grown ? required : grown);
+		}
+		writeBuffer.push_back(_id);
+		if (_len)
+			writeBuffer.insert(writeBuffer.end(), _data, _data + _len);
+		IncrementPacketCount(static_cast<PacketId>(_id));
+	}
 
 	// Handles Entity Metadata Interpreting
 	void ReadEntityMetadata(std::vector<PacketData::EntityMetadata::DataEntry>& _metadata);

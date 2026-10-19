@@ -98,6 +98,8 @@ AddonManager::~AddonManager() {
 		if (addon->info.events.addonUnload)
 			addon->info.events.addonUnload(&addon->api, {});
 
+		network.Remove(*addon);
+
 		Logger::Info << "Unloaded addon '" << addon->info.id << "'\n";
 
 		dlclose(addon->dynHandle);
